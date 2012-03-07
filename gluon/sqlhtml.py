@@ -1441,6 +1441,14 @@ class SQLFORM(FORM):
                       buttonedit='ui-icon ui-icon-pencil',
                       buttontable='ui-icon ui-icon-triangle-1-e',
                       buttonview='ui-icon ui-icon-zoomin',
+                      maintable='',
+                      paginator='web2py_paginator',
+                      paginatoractive='current',
+                        paginatornext='>',
+                        paginatorprior='<',
+                        paginatorfirst='<<',
+                        paginatorlast='>>',
+                      buttongroup='',
                       )
         elif ui == 'web2py':
             ui = dict(widget='',
@@ -1459,6 +1467,14 @@ class SQLFORM(FORM):
                       buttonedit='icon pen',
                       buttontable='icon rightarrow',
                       buttonview='icon magnifier',
+                      maintable='',
+                      paginator='web2py_paginator',
+                      paginatoractive='current',
+                        paginatornext='>',
+                        paginatorprior='<',
+                        paginatorfirst='<<',
+                        paginatorlast='>>',
+                      buttongroup='',
                       )
         elif not isinstance(ui,dict):
             raise RuntimeError,'SQLFORM.grid ui argument must be a dictionary'
@@ -1534,7 +1550,7 @@ class SQLFORM(FORM):
 
         def buttons(edit=False,view=False,record=None):
             buttons = DIV(gridbutton('buttonback', 'Back', referrer),
-                          _class='form_header row_buttons %(header)s %(cornertop)s' % ui)
+                          _class='form_header row_buttons %(buttongroup)s %(header)s %(cornertop)s' % ui)
             if edit:
                 args = ['edit',table._tablename,request.args[-1]]
                 buttons.append(gridbutton('buttonedit', 'Edit',
@@ -1673,7 +1689,7 @@ class SQLFORM(FORM):
             nrows = 0
             error = T('Unsupported query')
 
-        search_actions = DIV(_class='web2py_search_actions')
+        search_actions = DIV(_class='web2py_search_actions %(buttongroup)s' % ui)
         if create:
             search_actions.append(gridbutton(
                     buttonclass='buttonadd',
@@ -1747,20 +1763,20 @@ class SQLFORM(FORM):
                 return A(name,_href=url(vars=d),_class=trap_class())
             NPAGES = 5 # window is 2*NPAGES
             if page>NPAGES+1:
-                paginator.append(LI(self_link('<<',0)))
+                paginator.append(LI(self_link(ui.get('paginatorfirst','<<'),0)))
             if page>NPAGES:
-                paginator.append(LI(self_link('<',page-1)))
+                paginator.append(LI(self_link(ui.get('paginatorprior','<'),page-1)))
             pages = range(max(0,page-NPAGES),min(page+NPAGES,npages))
             for p in pages:
                 if p == page:
                     paginator.append(LI(A(p+1,_onclick='return false'),
-                                        _class=trap_class('current')))
+                                        _class=trap_class(ui.get('paginatoractive',''))))
                 else:
                     paginator.append(LI(self_link(p+1,p)))
             if page<npages-NPAGES:
-                paginator.append(LI(self_link('>',page+1)))
+                paginator.append(LI(self_link(ui.get('paginatornext','>'),page+1)))
             if page<npages-NPAGES-1:
-                paginator.append(LI(self_link('>>',npages-1)))
+                paginator.append(LI(self_link(ui.get('paginatorlast','>>'),npages-1)))
         else:
             limitby = None
 
@@ -1774,7 +1790,7 @@ class SQLFORM(FORM):
         console.append(DIV(message,_class='web2py_counter'))
 
         if rows:
-            htmltable = TABLE(THEAD(head))
+            htmltable = TABLE(THEAD(head), _class=ui.get('maintable', ''))
             tbody = TBODY()
             numrec=0
             for row in rows:
@@ -1825,7 +1841,7 @@ class SQLFORM(FORM):
                     else:
                         value = field.formatter(value)
                     tr.append(TD(value))
-                row_buttons = TD(_class='row_buttons')
+                row_buttons = TD(_class='row_buttons %(buttongroup)s' % ui)
                 if links and links_in_grid:
                     for link in links:
                         if isinstance(link, dict):
@@ -1864,7 +1880,7 @@ class SQLFORM(FORM):
         res = DIV(console,
                   DIV(htmltable,_class="web2py_table"),
                   DIV(paginator,_class=\
-                          "web2py_paginator %(header)s %(cornerbottom)s" % ui),
+                          "%(paginator)s %(header)s %(cornerbottom)s" % ui),
                   _class='%s %s' % (_class, ui.get('widget','')))
         res.create_form = create_form
         res.edit_form = edit_form
