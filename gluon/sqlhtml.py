@@ -1492,6 +1492,7 @@ class SQLFORM(FORM):
         ui.setdefault('formfooter', 'form_footer')
         ui.setdefault('web2pyconsole', 'web2py_console')
         ui.setdefault('formsearchwidget', '')
+        ui.setdefault('web2pysearchwidget', 'web2py_search_widget')
         ui.setdefault('web2pysearchactions', 'web2py_search_actions')
         ui.setdefault('web2pycounter', 'web2py_counter')
         ui.setdefault('htmltable', '')
@@ -1673,14 +1674,14 @@ class SQLFORM(FORM):
         search_form = None
         if searchable:
             if search_widget=='default':
-                search_widget = lambda sfield, url: FORM(
+                search_widget = lambda sfield, url: DIV(FORM(
                     SQLFORM.search_menu(sfields),
                     INPUT(_name='keywords',_value=request.vars.keywords,
                           _id='web2py_keywords'),
-                    INPUT(_type='submit',_value=T('Search')),
-                    INPUT(_type='submit',_value=T('Clear'),
+                    INPUT(_type='submit',_value=T('Search'), _class=ui.get('button', '')),
+                    INPUT(_type='submit',_value=T('Clear'), _class=ui.get('button', ''),
                           _onclick="jQuery('#web2py_keywords').val('');"),
-                    _method="GET",_action=url, _class=ui.get('formsearchwidget', ''))
+                    _method="GET",_action=url, _class=ui.get('formsearchwidget', '')), _class=ui.get('web2pysearchwidget'))
             sfields = reduce(lambda a,b:a+b,
                              [[f for f in t if f.readable] for t in tables])
             form = search_widget and search_widget(sfields,url()) or ''
