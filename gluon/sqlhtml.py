@@ -1498,6 +1498,10 @@ class SQLFORM(FORM):
         ui.setdefault('htmltable', '')
         ui.setdefault('htmltablestyle', 'width:100%;overflow-x:auto')
         ui.setdefault('divhtmltable', 'web2py_table')
+        ui.setdefault('dropdownactions', False)
+        ui.setdefault('buttondropdiv', 'btn-group')
+        ui.setdefault('buttondrop', 'btn dropdown-toggle')
+
 
         from gluon import current, redirect
         db = query._db
@@ -1516,30 +1520,50 @@ class SQLFORM(FORM):
             return URL(**b)
 
         def gridbutton(buttonclass='buttonadd',buttontext='Add',
-                       buttonurl=url(args=[]),callback=None,delete=None,trap=True):
+                       buttonurl=url(args=[]),callback=None,delete=None,trap=True,dropdownactions=False):
             if showbuttontext:
                 if callback:
-                    return A(SPAN(_class=ui.get(buttonclass,'')),
+                    if not dropdownactions:
+                        trap_btn = trap_class(ui.get('button',''),trap)
+                    else:
+                        trap_btn = ''
+                    linkbutton =  A(SPAN(_class=ui.get(buttonclass,'')),
                              SPAN(T(buttontext),_title=buttontext,
                                   _class=ui.get('buttontext','')),
                              callback=callback,delete=delete,
-                             _class=trap_class(ui.get('button',''),trap))
+                             _class=trap_btn)
                 else:
-                    return A(SPAN(_class=ui.get(buttonclass,'')),
+                    if not dropdownactions:
+                        trap_btn = trap_class(ui.get('button',''),trap)
+                    else:
+                        trap_btn = ''
+                    linkbutton =  A(SPAN(_class=ui.get(buttonclass,'')),
                              SPAN(T(buttontext),_title=buttontext,
                                   _class=ui.get('buttontext','')),
                              _href=buttonurl,
-                             _class=trap_class(ui.get('button',''),trap))
+                             _class=trap_btn)
             else:
                 if callback:
-                    return A(SPAN(_class=ui.get(buttonclass,'')),
+                    if not dropdownactions:
+                        trap_btn = trap_class(ui.get('buttontext',''),trap)
+                    else:
+                        trap_btn = ''
+                    linkbutton = A(SPAN(_class=ui.get(buttonclass,'')),
                              callback=callback,delete=delete,
                              _title=buttontext,
-                             _class=trap_class(ui.get('buttontext',''),trap))
+                             _class=trap_btn)
                 else:
-                    return A(SPAN(_class=ui.get(buttonclass,'')),
+                    if not dropdownactions:
+                        trap_btn = trap_class(ui.get('buttontext',''),trap)
+                    else:
+                        trap_btn = ''
+                    linkbutton = A(SPAN(_class=ui.get(buttonclass,'')),
                              _href=buttonurl,_title=buttontext,
-                             _class=trap_class(ui.get('buttontext',''),trap))
+                             _class=trap_btn)
+            if dropdownactions:
+                return LI(linkbutton)
+            else:
+                return linkbutton
         dbset = db(query)
         tablenames = db._adapter.tables(dbset.query)
         if left!=None: tablenames+=db._adapter.tables(left)
@@ -1861,7 +1885,10 @@ class SQLFORM(FORM):
                     else:
                         value = field.formatter(value)
                     tr.append(TD(value))
-                row_buttons = TD(_class='%(rowbuttons)s %(buttongroup)s' % ui)
+                if ui.get('dropdownactions'):
+                    row_buttons = UL(_class='dropdown-menu')
+                else:
+                    row_buttons = TD(_class='%(rowbuttons)s %(buttongroup)s' % ui)
                 if links and links_in_grid:
                     for link in links:
                         if isinstance(link, dict):
@@ -1873,17 +1900,30 @@ class SQLFORM(FORM):
                     if details and (not callable(details) or details(row)):
                         row_buttons.append(gridbutton(
                                 'buttonview', 'View',
-                                url(args=['view',tablename,id])))
+                                url(args=['view',tablename,id]), dropdownactions=ui.get('dropdownactions')))
                     if editable and (not callable(editable) or editable(row)):
                         row_buttons.append(gridbutton(
                                 'buttonedit', 'Edit',
-                                url(args=['edit',tablename,id])))
+                                url(args=['edit',tablename,id]), dropdownactions=ui.get('dropdownactions')))
                     if deletable and (not callable(deletable) or deletable(row)):
                         row_buttons.append(gridbutton(
                                 'buttondelete', 'Delete',
                                 callback=url(args=['delete',tablename,id]),
-                                delete='tr'))
-                    tr.append(row_buttons)
+                                delete='tr', dropdownactions=ui.get('dropdownactions')))
+                    if ui.get('dropdownactions'):
+                        xml_dropdown = '''
+                        <div class="%(buttondropdiv)s">
+                          <a class="%(buttondrop)s" data-toggle="dropdown" href="#">
+                           %(label)s <span class="caret"></span>
+                          </a>
+                          %(ul_menu)s
+                        </div>''' % {'label':T('Action'),
+                                     'ul_menu': row_buttons.xml(),
+                                     'buttondropdiv': ui.get('buttondropdiv'),
+                                     'buttondrop': ui.get('buttondrop')}
+                        tr.append(XML(xml_dropdown))
+                    else:
+                        tr.append(row_buttons)
                 tbody.append(tr)
             htmltable.append(tbody)
             htmltable = DIV(htmltable, _class=ui.get('htmltable', ''), _style=ui.get('htmltablestyle'))
