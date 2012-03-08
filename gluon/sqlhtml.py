@@ -1444,10 +1444,10 @@ class SQLFORM(FORM):
                       maintable='',
                       paginator='web2py_paginator',
                       paginatoractive='current',
-                        paginatornext='>',
-                        paginatorprior='<',
-                        paginatorfirst='<<',
-                        paginatorlast='>>',
+                      paginatornext='>',
+                      paginatorprior='<',
+                      paginatorfirst='<<',
+                      paginatorlast='>>',
                       buttongroup='',
                       )
         elif ui == 'web2py':
@@ -1470,14 +1470,33 @@ class SQLFORM(FORM):
                       maintable='',
                       paginator='web2py_paginator',
                       paginatoractive='current',
-                        paginatornext='>',
-                        paginatorprior='<',
-                        paginatorfirst='<<',
-                        paginatorlast='>>',
+                      paginatornext='>',
+                      paginatorprior='<',
+                      paginatorfirst='<<',
+                      paginatorlast='>>',
                       buttongroup='',
                       )
         elif not isinstance(ui,dict):
             raise RuntimeError,'SQLFORM.grid ui argument must be a dictionary'
+
+        #Compat ui - Default ui override
+        ui.setdefault('paginator', 'web2py_paginator')
+        ui.setdefault('paginatoractive', 'current')
+        ui.setdefault('paginatornext', '>')
+        ui.setdefault('paginatorprior', '<')
+        ui.setdefault('paginatorfirst', '<<')
+        ui.setdefault('paginatorlast', '>>')
+        ui.setdefault('web2pyform', 'web2py_form')
+        ui.setdefault('formheader', 'form_header')
+        ui.setdefault('rowbuttons', 'row_buttons')
+        ui.setdefault('formfooter', 'form_footer')
+        ui.setdefault('web2pyconsole', 'web2py_console')
+        ui.setdefault('formsearchwidget', '')
+        ui.setdefault('web2pysearchactions', 'web2py_search_actions')
+        ui.setdefault('web2pycounter', 'web2py_counter')
+        ui.setdefault('htmltable', '')
+        ui.setdefault('htmltablestyle', 'width:100%;overflow-x:auto')
+        ui.setdefault('divhtmltable', 'web2py_table')
 
         from gluon import current, redirect
         db = query._db
@@ -1550,7 +1569,7 @@ class SQLFORM(FORM):
 
         def buttons(edit=False,view=False,record=None):
             buttons = DIV(gridbutton('buttonback', 'Back', referrer),
-                          _class='form_header row_buttons %(buttongroup)s %(header)s %(cornertop)s' % ui)
+                          _class='%(formheader)s %(rowbuttons)s %(buttongroup)s %(header)s %(cornertop)s' % ui)
             if edit:
                 args = ['edit',table._tablename,request.args[-1]]
                 buttons.append(gridbutton('buttonedit', 'Edit',
@@ -1568,7 +1587,7 @@ class SQLFORM(FORM):
             return buttons
 
         formfooter = DIV(
-            _class='form_footer row_buttons %(header)s %(cornerbottom)s' % ui)
+            _class='%(formfooter)s %(rowbuttons)s %(header)s %(cornerbottom)s' % ui)
 
         create_form = edit_form = None
 
@@ -1577,7 +1596,7 @@ class SQLFORM(FORM):
             table = db[request.args[-1]]
             create_form = SQLFORM(
                 table, ignore_rw = ignore_rw, formstyle = formstyle,
-                _class='web2py_form').process(
+                _class=ui.get('web2pyform','web2py_form')).process(
                 next=referrer,
                 onvalidation=onvalidation,
                 onsuccess=oncreate,
@@ -1592,7 +1611,7 @@ class SQLFORM(FORM):
             table = db[request.args[-2]]
             record = table(request.args[-1]) or redirect(URL('error'))
             form = SQLFORM(table,record,upload=upload,ignore_rw=ignore_rw,
-                           formstyle=formstyle, readonly=True,_class='web2py_form')
+                           formstyle=formstyle, readonly=True,_class=ui.get('web2pyform','web2py_form'))
             res = DIV(buttons(edit=editable,record=record),form,
                       formfooter,_class=_class)
             res.create_form = None
@@ -1605,7 +1624,7 @@ class SQLFORM(FORM):
             record = table(request.args[-1]) or redirect(URL('error'))
             edit_form = SQLFORM(table,record,upload=upload,ignore_rw=ignore_rw,
                                 formstyle=formstyle,deletable=deletable,
-                                _class='web2py_form',
+                                _class=ui.get('web2pyform','web2py_form'),
                                 submit_button = T('Submit'),
                                 delete_label = T('Check to delete'))
             edit_form.process(formname=formname,
@@ -1649,7 +1668,7 @@ class SQLFORM(FORM):
         session['_web2py_grid_referrer_'+formname] = \
             URL(args=request.args,vars=request.vars,
                 user_signature=user_signature)
-        console = DIV(_class='web2py_console %(header)s %(cornertop)s' % ui)
+        console = DIV(_class='%(web2pyconsole)s %(header)s %(cornertop)s' % ui)
         error = None
         search_form = None
         if searchable:
@@ -1661,7 +1680,7 @@ class SQLFORM(FORM):
                     INPUT(_type='submit',_value=T('Search')),
                     INPUT(_type='submit',_value=T('Clear'),
                           _onclick="jQuery('#web2py_keywords').val('');"),
-                    _method="GET",_action=url)
+                    _method="GET",_action=url, _class=ui.get('formsearchwidget', ''))
             sfields = reduce(lambda a,b:a+b,
                              [[f for f in t if f.readable] for t in tables])
             form = search_widget and search_widget(sfields,url()) or ''
@@ -1689,7 +1708,7 @@ class SQLFORM(FORM):
             nrows = 0
             error = T('Unsupported query')
 
-        search_actions = DIV(_class='web2py_search_actions %(buttongroup)s' % ui)
+        search_actions = DIV(_class='%(web2pysearchactions)s %(buttongroup)s' % ui)
         if create:
             search_actions.append(gridbutton(
                     buttonclass='buttonadd',
@@ -1787,7 +1806,7 @@ class SQLFORM(FORM):
             rows = None
             error = T("Query Not Supported")
         message = error or T('%(nrows)s records found') % dict(nrows=nrows)
-        console.append(DIV(message,_class='web2py_counter'))
+        console.append(DIV(message,_class=ui.get('web2pycounter', 'web2py_counter')))
 
         if rows:
             htmltable = TABLE(THEAD(head), _class=ui.get('maintable', ''))
@@ -1841,7 +1860,7 @@ class SQLFORM(FORM):
                     else:
                         value = field.formatter(value)
                     tr.append(TD(value))
-                row_buttons = TD(_class='row_buttons %(buttongroup)s' % ui)
+                row_buttons = TD(_class='%(rowbuttons)s %(buttongroup)s' % ui)
                 if links and links_in_grid:
                     for link in links:
                         if isinstance(link, dict):
@@ -1866,7 +1885,7 @@ class SQLFORM(FORM):
                     tr.append(row_buttons)
                 tbody.append(tr)
             htmltable.append(tbody)
-            htmltable = DIV(htmltable,_style='width:100%;overflow-x:auto')
+            htmltable = DIV(htmltable, _class=ui.get('htmltable', ''), _style=ui.get('htmltablestyle'))
             if selectable:
                 htmltable = FORM(htmltable,INPUT(_type="submit"))
                 if htmltable.process(formname=formname).accepted:#
@@ -1878,7 +1897,7 @@ class SQLFORM(FORM):
         else:
             htmltable = DIV(T('No records found'))
         res = DIV(console,
-                  DIV(htmltable,_class="web2py_table"),
+                  DIV(htmltable,_class=ui.get('divhtmltable', 'web2py_table')),
                   DIV(paginator,_class=\
                           "%(paginator)s %(header)s %(cornerbottom)s" % ui),
                   _class='%s %s' % (_class, ui.get('widget','')))
