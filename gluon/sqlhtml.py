@@ -1895,7 +1895,12 @@ class SQLFORM(FORM):
                             tr.append(TD(link['body'](row)))
                         else:
                             if link(row):
-                                row_buttons.append(link(row))
+                                if ui.get('dropdownactions'):
+                                    btnlink = link(row)
+                                    btnlink['_class']=''
+                                    row_buttons.append(btnlink)
+                                else:
+                                    row_buttons.append(link(row))
                 if include_buttons_column:
                     if details and (not callable(details) or details(row)):
                         row_buttons.append(gridbutton(
