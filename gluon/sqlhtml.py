@@ -1501,6 +1501,7 @@ class SQLFORM(FORM):
         ui.setdefault('dropdownactions', False)
         ui.setdefault('buttondropdiv', 'btn-group')
         ui.setdefault('buttondrop', 'btn dropdown-toggle')
+        ui.setdefault('buttongroup', '')
 
 
         from gluon import current, redirect
